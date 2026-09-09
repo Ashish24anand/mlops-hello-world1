@@ -1,0 +1,44 @@
+name: CI to train and save model
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+    matrix-pip:
+        name: train and save model
+        runs-on: ubuntu-latest
+        strategy:
+            matrix:
+                python-version: [3.14]
+        steps:
+            - name: Checkout repository
+              uses: actions/checkout@v4
+
+            - name: Install uv
+              uses: astral-sh/setup-uv@v3
+              # Enable persistent caching for faster builds
+              with:
+                enable-cache: true
+
+            - name: Set up Python ${{ matrix.python-version }}
+              uses: actions/setup-python@v4
+              with:
+                python-version: "pyproject.toml"
+
+
+            - name: Install dependencies
+              run: uv sync
+
+            - name: Train and save model
+              run: |
+                uv run train.py
+                ls -la artifacts
+
+            - name: Upload model artifact
+              uses: actions/upload-artifact@v4
+              with:
+                name: model-artifact-${{ github.run_id }}
+                path: artifacts
